@@ -1,0 +1,414 @@
+{
+  "sessions": [
+    {
+      "id": "53121da2-d964-44b0-9018-5cfcee725b5c",
+      "date": "2026-03-16",
+      "first_name": "Jean",
+      "last_name": "Dupont",
+      "zone_id": null,
+      "zone_name": "Table 12",
+      "arrival_time": "2026-03-16T23:17:16.957Z",
+      "departure_time": null,
+      "duration_minutes": null,
+      "status": "active",
+      "notes": null,
+      "is_day_pass": true,
+      "day_pass_price": 20,
+      "created_by": null,
+      "created_at": "2026-03-16T23:17:16.957Z",
+      "updated_at": "2026-03-16T23:21:03.088Z"
+    },
+    {
+      "id": "5bbcff53-f53e-4bc6-9f73-0d97415e3c1f",
+      "date": "2026-03-16",
+      "first_name": "Jean",
+      "last_name": "Dupont",
+      "zone_id": null,
+      "zone_name": "Table 18",
+      "arrival_time": "2026-03-16T23:17:22.717Z",
+      "departure_time": null,
+      "duration_minutes": null,
+      "status": "active",
+      "notes": null,
+      "is_day_pass": false,
+      "day_pass_price": null,
+      "created_by": null,
+      "created_at": "2026-03-16T23:17:22.717Z",
+      "updated_at": "2026-03-16T23:21:07.196Z"
+    },
+    {
+      "id": "c209444a-68bd-45a8-9e06-13465c9310be",
+      "date": "2026-03-16",
+      "first_name": "OKoka",
+      "last_name": null,
+      "zone_id": null,
+      "zone_name": null,
+      "arrival_time": "2026-03-16T23:29:40.922Z",
+      "departure_time": null,
+      "duration_minutes": null,
+      "status": "active",
+      "notes": null,
+      "is_day_pass": false,
+      "day_pass_price": null,
+      "created_by": null,
+      "created_at": "2026-03-16T23:29:40.922Z",
+      "updated_at": "2026-03-16T23:29:40.922Z"
+    }
+  ],
+  "session_drinks": [
+    {
+      "id": "8fe349e1-fc87-4a16-b2a5-1e8052f3c5cc",
+      "session_id": "53121da2-d964-44b0-9018-5cfcee725b5c",
+      "drink_id": "d003",
+      "drink_name": "Cappuccino",
+      "quantity": 1,
+      "bar_status": "served",
+      "added_at": "2026-03-16T23:17:43.308Z",
+      "served_at": "2026-03-16T23:18:21.355Z",
+      "line_total": 0.5
+    },
+    {
+      "id": "c2e9979d-a04e-4333-a56d-11b7bc31b233",
+      "session_id": "5bbcff53-f53e-4bc6-9f73-0d97415e3c1f",
+      "drink_id": "d009",
+      "drink_name": "Chai Latte",
+      "quantity": 1,
+      "bar_status": "served",
+      "added_at": "2026-03-16T23:17:53.657Z",
+      "served_at": "2026-03-16T23:18:21.924Z",
+      "line_total": null
+    },
+    {
+      "id": "a4465493-9942-4aa7-9c9b-0da0d7015c5a",
+      "session_id": "53121da2-d964-44b0-9018-5cfcee725b5c",
+      "drink_id": "d005",
+      "drink_name": "Latte",
+      "quantity": 1,
+      "bar_status": "served",
+      "added_at": "2026-03-16T23:18:54.199Z",
+      "served_at": "2026-03-16T23:29:55.806Z",
+      "line_total": 0.5
+    },
+    {
+      "id": "bf0f9d92-5f0d-4e81-a9aa-249dcb59605b",
+      "session_id": "c209444a-68bd-45a8-9e06-13465c9310be",
+      "drink_id": "d007",
+      "drink_name": "Matcha",
+      "quantity": 1,
+      "bar_status": "served",
+      "added_at": "2026-03-16T23:29:51.097Z",
+      "served_at": "2026-03-16T23:30:02.150Z",
+      "line_total": 0.5
+    }
+  ],
+  "session_drink_addons": [
+    {
+      "id": "9c6e45ca-9b6e-4b99-90a1-18af555593c7",
+      "session_drink_id": "8fe349e1-fc87-4a16-b2a5-1e8052f3c5cc",
+      "addon_id": "a001",
+      "addon_name": "Sirop vanille",
+      "price_snapshot": 0.5,
+      "created_at": "2026-03-16T23:17:43.308Z"
+    },
+    {
+      "id": "d5e53a66-c1e5-401a-9928-95dcb731254c",
+      "session_drink_id": "a4465493-9942-4aa7-9c9b-0da0d7015c5a",
+      "addon_id": "a002",
+      "addon_name": "Sirop caramel",
+      "price_snapshot": 0.5,
+      "created_at": "2026-03-16T23:18:54.199Z"
+    },
+    {
+      "id": "ac6faceb-2d90-4877-93f6-6e2c0e57956a",
+      "session_drink_id": "bf0f9d92-5f0d-4e81-a9aa-249dcb59605b",
+      "addon_id": "a001",
+      "addon_name": "Sirop vanille",
+      "price_snapshot": 0.5,
+      "created_at": "2026-03-16T23:29:51.097Z"
+    }
+  ],
+  "session_extras": [
+    {
+      "id": "2856e2b1-8e35-4eb7-8345-625b472db963",
+      "session_id": "c209444a-68bd-45a8-9e06-13465c9310be",
+      "extra_id": "e003",
+      "extra_name": "Banana Bread",
+      "quantity": 1,
+      "added_at": "2026-03-16T23:29:43.763Z"
+    }
+  ],
+  "drinks_catalog": [
+    {
+      "id": "d001",
+      "name": "Espresso",
+      "category": "hot",
+      "price": null,
+      "is_active": true,
+      "sort_order": 10,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "d002",
+      "name": "Americano",
+      "category": "hot",
+      "price": null,
+      "is_active": true,
+      "sort_order": 20,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "d003",
+      "name": "Cappuccino",
+      "category": "hot",
+      "price": null,
+      "is_active": true,
+      "sort_order": 30,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "d004",
+      "name": "Flat White",
+      "category": "hot",
+      "price": null,
+      "is_active": true,
+      "sort_order": 40,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "d005",
+      "name": "Latte",
+      "category": "hot",
+      "price": null,
+      "is_active": true,
+      "sort_order": 50,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "d006",
+      "name": "Latte Vanille",
+      "category": "hot",
+      "price": null,
+      "is_active": true,
+      "sort_order": 60,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "d007",
+      "name": "Matcha",
+      "category": "hot",
+      "price": null,
+      "is_active": true,
+      "sort_order": 70,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "d008",
+      "name": "Matcha Vanille",
+      "category": "hot",
+      "price": null,
+      "is_active": true,
+      "sort_order": 80,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "d009",
+      "name": "Chai Latte",
+      "category": "hot",
+      "price": null,
+      "is_active": true,
+      "sort_order": 90,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "d010",
+      "name": "Chocolat chaud",
+      "category": "hot",
+      "price": null,
+      "is_active": true,
+      "sort_order": 100,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "d011",
+      "name": "Thé menthe",
+      "category": "hot",
+      "price": null,
+      "is_active": true,
+      "sort_order": 110,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "d012",
+      "name": "Rooibos",
+      "category": "hot",
+      "price": null,
+      "is_active": true,
+      "sort_order": 120,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "d013",
+      "name": "Americano glacé",
+      "category": "cold",
+      "price": null,
+      "is_active": true,
+      "sort_order": 10,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "d014",
+      "name": "Latte glacé",
+      "category": "cold",
+      "price": null,
+      "is_active": true,
+      "sort_order": 20,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "d015",
+      "name": "Matcha glacé",
+      "category": "cold",
+      "price": null,
+      "is_active": true,
+      "sort_order": 30,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "d016",
+      "name": "Ice Chai Latte",
+      "category": "cold",
+      "price": null,
+      "is_active": true,
+      "sort_order": 40,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "d017",
+      "name": "Eau pétillante",
+      "category": "cold",
+      "price": null,
+      "is_active": true,
+      "sort_order": 50,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "d018",
+      "name": "Jus d'orange",
+      "category": "cold",
+      "price": null,
+      "is_active": true,
+      "sort_order": 60,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  ],
+  "extras_catalog": [
+    {
+      "id": "e001",
+      "name": "Cookie",
+      "price": null,
+      "is_active": true,
+      "sort_order": 10,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "e002",
+      "name": "Maxi Cookie",
+      "price": null,
+      "is_active": true,
+      "sort_order": 20,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "e003",
+      "name": "Banana Bread",
+      "price": null,
+      "is_active": true,
+      "sort_order": 30,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "e004",
+      "name": "Brownie",
+      "price": null,
+      "is_active": true,
+      "sort_order": 40,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "e005",
+      "name": "Madeleine",
+      "price": null,
+      "is_active": true,
+      "sort_order": 50,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "e006",
+      "name": "Brookie",
+      "price": null,
+      "is_active": true,
+      "sort_order": 60,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "e007",
+      "name": "Carrot Cake",
+      "price": null,
+      "is_active": true,
+      "sort_order": 70,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "e008",
+      "name": "Scone",
+      "price": null,
+      "is_active": true,
+      "sort_order": 80,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  ],
+  "drink_addons": [
+    {
+      "id": "a001",
+      "name": "Sirop vanille",
+      "price": 0.5,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "a002",
+      "name": "Sirop caramel",
+      "price": 0.5,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "a003",
+      "name": "Purée framboise",
+      "price": 0.8,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "a004",
+      "name": "Lait d'avoine",
+      "price": 0.6,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "a005",
+      "name": "Lait de coco",
+      "price": 0.6,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "a006",
+      "name": "Sirop noisette",
+      "price": 0.5,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  ]
+}
