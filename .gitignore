@@ -5,6 +5,9 @@ node_modules/
 .next/
 out/
 
+# TypeScript build cache
+tsconfig.tsbuildinfo
+
 # Vercel
 .vercel
 
