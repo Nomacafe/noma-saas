@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-// Auth désactivée pour les tests locaux V1
-// Pour réactiver : voir middleware.ts.auth-backup
-export function middleware(request: NextRequest) {
+// Pass-through — pas d'authentification pour cette app interne
+export function proxy(request: NextRequest) {
   return NextResponse.next()
 }
 
