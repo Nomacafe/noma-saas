@@ -1,0 +1,6 @@
+[variables]
+NODE_VERSION = "20"
+
+[phases.build]
+cmds = ["npm run build"]
+cacheDirectories = [".next/cache", "node_modules/.cache"]
