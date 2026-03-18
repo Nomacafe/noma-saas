@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -10,18 +10,9 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# Production runner
-FROM node:20-alpine AS runner
-
-WORKDIR /app
 ENV NODE_ENV=production
-
-# Copy only what's needed
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/node_modules ./node_modules
+ENV PATH=/app/node_modules/.bin:$PATH
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["sh", "-c", "next start -p ${PORT:-3000}"]
