@@ -1,10 +1,9 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState } from 'react'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import { ExtraCatalog, SessionWithDetails } from '@/types'
-import { addExtraToSession } from '@/app/actions/sessions'
 import { Cookie } from 'lucide-react'
 
 interface AddExtraModalProps {
@@ -16,20 +15,35 @@ interface AddExtraModalProps {
 }
 
 export default function AddExtraModal({ open, onClose, onSuccess, session, extras }: AddExtraModalProps) {
-  const [isPending, startTransition] = useTransition()
+  const [isPending, setIsPending] = useState(false)
 
-  function handleQuickAdd(extra: ExtraCatalog) {
+  async function handleQuickAdd(extra: ExtraCatalog) {
     if (!session) return
-    startTransition(async () => {
-      await addExtraToSession({
-        session_id: session.id,
-        extra_id: extra.id,
-        extra_name: extra.name,
-        quantity: 1,
+    setIsPending(true)
+    try {
+      const res = await fetch('/api/bar/drinks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action:     'add_extra',
+          session_id: session.id,
+          extra_id:   extra.id,
+          extra_name: extra.name,
+          quantity:   1,
+        }),
       })
-      onClose()
-      onSuccess()
-    })
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        console.error('Erreur ajout extra:', data.error)
+      } else {
+        onClose()
+        onSuccess()
+      }
+    } catch (e) {
+      console.error('Erreur réseau:', e)
+    } finally {
+      setIsPending(false)
+    }
   }
 
   const activeExtras = extras.filter(e => e.is_active).sort((a, b) => a.sort_order - b.sort_order)
@@ -50,11 +64,8 @@ export default function AddExtraModal({ open, onClose, onSuccess, session, extra
             </button>
           ))}
         </div>
-
         <div className="pt-2 border-t border-slate-100">
-          <Button variant="secondary" onClick={onClose} className="w-full">
-            Fermer
-          </Button>
+          <Button variant="secondary" onClick={onClose} className="w-full">Fermer</Button>
         </div>
       </div>
     </Modal>

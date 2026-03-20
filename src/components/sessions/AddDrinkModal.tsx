@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import { DrinkCatalog, DrinkAddon, SessionWithDetails } from '@/types'
-import { addDrinkToSession } from '@/app/actions/sessions'
 import { Coffee, ChevronLeft, Check } from 'lucide-react'
 
 interface AddDrinkModalProps {
@@ -23,7 +22,7 @@ export default function AddDrinkModal({ open, onClose, onSuccess, session, drink
   const [step,           setStep]         = useState<'drink' | 'addons'>('drink')
   const [selectedDrink,  setSelectedDrink]= useState<DrinkCatalog | null>(null)
   const [selectedAddons, setSelectedAddons] = useState<string[]>([])
-  const [isPending,      startTransition] = useTransition()
+  const [isPending,      setIsPending]    = useState(false)
 
   function handleClose() {
     setStep('drink'); setSelectedDrink(null); setSelectedAddons([])
@@ -32,7 +31,6 @@ export default function AddDrinkModal({ open, onClose, onSuccess, session, drink
 
   function handlePickDrink(drink: DrinkCatalog) {
     setSelectedDrink(drink)
-    // Si pas d'addons actifs → ajout immédiat
     if (!activeAddons.length) {
       submitDrink(drink, [])
     } else {
@@ -44,19 +42,34 @@ export default function AddDrinkModal({ open, onClose, onSuccess, session, drink
     setSelectedAddons(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id])
   }
 
-  function submitDrink(drink: DrinkCatalog, addonIds: string[]) {
+  async function submitDrink(drink: DrinkCatalog, addonIds: string[]) {
     if (!session) return
-    startTransition(async () => {
-      await addDrinkToSession({
-        session_id: session.id,
-        drink_id:   drink.id,
-        drink_name: drink.name,
-        quantity:   1,
-        addon_ids:  addonIds,
+    setIsPending(true)
+    try {
+      const res = await fetch('/api/bar/drinks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action:     'add_drink',
+          session_id: session.id,
+          drink_id:   drink.id,
+          drink_name: drink.name,
+          quantity:   1,
+          addon_ids:  addonIds,
+        }),
       })
-      handleClose()
-      onSuccess()
-    })
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        console.error('Erreur ajout boisson:', data.error)
+      } else {
+        handleClose()
+        onSuccess()
+      }
+    } catch (e) {
+      console.error('Erreur réseau:', e)
+    } finally {
+      setIsPending(false)
+    }
   }
 
   const activeAddons = addons.filter(a => a.is_active)
@@ -78,7 +91,6 @@ export default function AddDrinkModal({ open, onClose, onSuccess, session, drink
         : `Suppléments — ${selectedDrink?.name ?? ''}`}
       size="lg"
     >
-      {/* ── ÉTAPE 1 : Choisir la boisson ── */}
       {step === 'drink' && (
         <div className="space-y-6">
           {CATEGORY_ORDER.map(cat => {
@@ -111,7 +123,6 @@ export default function AddDrinkModal({ open, onClose, onSuccess, session, drink
         </div>
       )}
 
-      {/* ── ÉTAPE 2 : Suppléments ── */}
       {step === 'addons' && selectedDrink && (
         <div className="space-y-5">
           <button

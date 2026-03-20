@@ -1,10 +1,9 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState } from 'react'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import { SessionWithDetails } from '@/types'
-import { stopSession, cancelSession } from '@/app/actions/sessions'
 import { calcDurationMinutes, formatDuration, formatTime } from '@/lib/utils'
 import { Clock, Coffee, Cookie, Square } from 'lucide-react'
 
@@ -17,19 +16,30 @@ interface StopSessionModalProps {
 }
 
 export default function StopSessionModal({ open, onClose, onSuccess, session, mode }: StopSessionModalProps) {
-  const [isPending, startTransition] = useTransition()
+  const [isPending, setIsPending] = useState(false)
 
-  function handleConfirm() {
+  async function handleConfirm() {
     if (!session) return
-    startTransition(async () => {
-      if (mode === 'stop') {
-        await stopSession(session.id)
+    setIsPending(true)
+    try {
+      const action = mode === 'stop' ? 'stop' : 'cancel'
+      const res = await fetch(`/api/sessions/${session.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        console.error('Erreur:', data.error)
       } else {
-        await cancelSession(session.id)
+        onClose()
+        onSuccess()
       }
-      onClose()
-      onSuccess()
-    })
+    } catch (e) {
+      console.error('Erreur réseau:', e)
+    } finally {
+      setIsPending(false)
+    }
   }
 
   if (!session) return null
@@ -49,9 +59,7 @@ export default function StopSessionModal({ open, onClose, onSuccess, session, mo
         <div className="bg-slate-50 rounded-2xl p-5 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm text-slate-500">Client</span>
-            <span className="font-semibold text-slate-900">
-              {session.first_name} {session.last_name ?? ''}
-            </span>
+            <span className="font-semibold text-slate-900">{session.first_name} {session.last_name ?? ''}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-slate-500 flex items-center gap-1.5"><Clock size={13} /> Arrivée</span>
@@ -82,9 +90,7 @@ export default function StopSessionModal({ open, onClose, onSuccess, session, mo
         )}
 
         <div className="flex gap-3">
-          <Button variant="secondary" onClick={onClose} className="flex-1">
-            Retour
-          </Button>
+          <Button variant="secondary" onClick={onClose} className="flex-1">Retour</Button>
           <Button
             variant={mode === 'stop' ? 'success' : 'danger'}
             onClick={handleConfirm}
