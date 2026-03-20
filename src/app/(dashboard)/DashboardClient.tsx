@@ -15,9 +15,7 @@ import {
   Plus, Search, RefreshCw, Coffee, ChevronLeft, ChevronRight,
   Download, FileSpreadsheet, BarChart2,
 } from 'lucide-react'
-import {
-  getSessionsForDate, getKPIForDate,
-} from '@/app/actions/sessions'
+
 import {
   todayISO, formatTime, formatDuration, calcDurationMinutes,
   formatDateShort, generateCSV, generateExcel,
@@ -80,12 +78,10 @@ export default function DashboardClient({
 
   const loadDate = useCallback((d: string) => {
     startRefresh(async () => {
-      const [{ data }, freshKpi] = await Promise.all([
-        getSessionsForDate(d),
-        getKPIForDate(d),
-      ])
-      setSessions(data as SessionWithDetails[])
-      if (freshKpi) setKpi(freshKpi)
+      const res = await fetch(`/api/sessions?date=${d}`)
+      const json = await res.json()
+      setSessions((json.data ?? []) as SessionWithDetails[])
+      if (json.kpi) setKpi(json.kpi)
       setDate(d)
     })
   }, [])
