@@ -20,6 +20,7 @@ export default async function RootPage() {
         total_sessions: 0, active_sessions: 0, finished_sessions: 0,
         cancelled_sessions: 0, total_drinks: 0, total_extras: 0,
       }}
+      initialDate={today}
       drinks={drinks}
       extras={extras}
       addons={addons}

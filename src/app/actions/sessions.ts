@@ -7,7 +7,7 @@ import {
   db_addDrink, db_addExtra, db_serveDrink,
   db_getSessionsForDate, db_getSessionsForRange,
   db_getKPIForDate, db_getCatalog, db_getFullCatalog, db_getStats,
-} from '@/lib/supabaseDb'
+} from '@/lib/db'
 
 export async function createSession(input: CreateSessionInput) {
   try {
@@ -50,7 +50,15 @@ export async function cancelSession(sessionId: string) {
 
 export async function updateSession(
   sessionId: string,
-  data: { first_name: string; last_name: string | null; zone_name: string | null; notes: string | null }
+  data: {
+    first_name: string
+    last_name: string | null
+    zone_name: string | null
+    notes: string | null
+    arrival_time?: string
+    departure_time?: string | null
+    duration_minutes?: number | null
+  }
 ) {
   try {
     const result = await db_updateSession(sessionId, data)

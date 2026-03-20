@@ -164,7 +164,15 @@ export function db_cancelSession(sessionId: string): { error?: string } {
 
 export function db_updateSession(
   sessionId: string,
-  data: { first_name: string; last_name: string | null; zone_name: string | null; notes: string | null }
+  data: {
+    first_name: string
+    last_name: string | null
+    zone_name: string | null
+    notes: string | null
+    arrival_time?: string
+    departure_time?: string | null
+    duration_minutes?: number | null
+  }
 ): { error?: string } {
   const db = readDb()
   const idx = db.sessions.findIndex(s => s.id === sessionId)

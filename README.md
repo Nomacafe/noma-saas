@@ -1,175 +1,125 @@
-# NOMA — SaaS interne Café Coworking
+# NOMA Café Coworking — SaaS interne V1
 
-Application interne de gestion des sessions client pour **NOMA Café Coworking**, Toulouse.
-
----
-
-## Stack technique
-
-| Couche       | Technologie                  |
-|--------------|------------------------------|
-| Frontend     | Next.js 15, React 19, TypeScript |
-| Styles       | TailwindCSS 3               |
-| Backend      | Next.js Server Actions       |
-| Base de données | PostgreSQL via Supabase   |
-| Auth         | Supabase Auth                |
-| Hébergement  | Vercel + Supabase            |
+Outil de gestion des sessions clients au comptoir.
+**Stack** : Next.js 16 · React 19 · TypeScript · Tailwind CSS · JSON local / Supabase
 
 ---
 
-## Architecture du projet
-
-```
-src/
-├── app/
-│   ├── (auth)/login/         # Page de connexion
-│   ├── (dashboard)/          # Layout protégé
-│   │   ├── page.tsx          # Dashboard du jour
-│   │   ├── DashboardClient.tsx
-│   │   ├── bar/              # File de préparation bar
-│   │   ├── historique/       # Historique + export CSV
-│   │   └── catalogue/        # Catalogue boissons/extras
-│   └── actions/sessions.ts   # Server Actions (toute la logique métier)
-├── components/
-│   ├── ui/                   # Button, Modal, Input, Badge, Select
-│   ├── layout/               # Sidebar, Header
-│   ├── sessions/             # SessionCard, modals CRUD
-│   ├── dashboard/            # KPIBar
-│   └── bar/                  # BarQueue
-├── hooks/
-│   └── useTimer.ts           # Timer live pour sessions actives
-├── lib/
-│   ├── supabase/             # Client + Server clients
-│   ├── utils.ts              # Fonctions utilitaires
-│   └── constants.ts          # Zones, labels
-└── types/index.ts            # Tous les types TypeScript
-supabase/
-├── schema.sql                # Schéma complet PostgreSQL
-└── seed.sql                  # Données initiales
-```
-
----
-
-## Installation
-
-### 1. Prérequis
-
-- Node.js 20+
-- npm ou yarn
-- Compte Supabase (gratuit)
-
-### 2. Cloner et installer
+## Démarrage rapide (mode local — recommandé)
 
 ```bash
 cd noma-saas
 npm install
-```
-
-### 3. Créer le projet Supabase
-
-1. Aller sur [supabase.com](https://supabase.com)
-2. Créer un nouveau projet
-3. Aller dans **SQL Editor**
-4. Exécuter `supabase/schema.sql` (copier-coller le contenu)
-5. Exécuter `supabase/seed.sql` (copier-coller le contenu)
-
-### 4. Configurer les variables d'environnement
-
-```bash
-cp .env.local.example .env.local
-```
-
-Remplir `.env.local` avec les valeurs de votre projet Supabase (Settings > API) :
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-```
-
-### 5. Créer un compte utilisateur
-
-Dans Supabase > Authentication > Users > "Add user" :
-- Email : `contact@nomacafe.fr`
-- Mot de passe : (votre choix)
-
-### 6. Lancer en développement
-
-```bash
 npm run dev
 ```
 
-Ouvrir [http://localhost:3000](http://localhost:3000)
+Ouvrir http://localhost:3000
+
+> Le mode local utilise `data/db.json` — **aucune connexion internet requise**.
+> Des données d'exemple pour aujourd'hui sont déjà présentes.
+
+---
+
+## Configuration
+
+### Mode local (défaut)
+
+Le fichier `.env.local` contient déjà :
+
+```
+USE_LOCAL_DB=true
+```
+
+C'est tout. L'app fonctionne sans Supabase.
+
+### Mode Supabase (cloud)
+
+1. Créer un projet sur supabase.com
+2. Exécuter `supabase/schema.sql` dans l'éditeur SQL
+3. Exécuter `supabase/seed.sql` pour les données de référence
+4. Modifier `.env.local` :
+
+```
+USE_LOCAL_DB=false
+NEXT_PUBLIC_SUPABASE_URL=https://VOTRE_ID.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...anon_key...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...service_role_key...
+```
+
+IMPORTANT : La SUPABASE_SERVICE_ROLE_KEY est différente de l'anon key.
+La trouver dans Supabase > Settings > API > service_role.
 
 ---
 
 ## Fonctionnalités V1
 
-### Dashboard du jour
-- KPIs : sessions totales, actives, terminées, boissons, extras
-- Sessions actives avec timer en temps réel
-- File bar intégrée (commandes en attente)
-- Filtres : Toutes / En cours / Terminées
-- Recherche par prénom
+### Dashboard
+- Table des sessions : Arrivée / Prénom / Zone / Départ / Durée / Statut / Consommations / Actions
+- Navigation par date (← Aujourd'hui →) + sélecteur
+- Filtres : Tous / Actifs / Terminés + recherche par prénom
+- Export CSV et Export Excel du jour affiché
+- KPIs masquables
+- Chronomètre live pour sessions actives
 
-### Session
-- Création en < 10 secondes (prénom + zone optionnelle)
-- Timer live depuis l'arrivée
-- Ajout boisson en 1 clic
-- Ajout extra en 1 clic
-- Arrêt avec calcul automatique de durée
-- Annulation
-- Édition (nom, zone, note)
+### Sessions
+- Création en < 10 secondes
+- Formule journée (forfait, durée non calculée)
+- Heure d'arrivée et départ éditables → durée recalculée automatiquement
 
-### File bar
-- Vue dédiée des commandes à préparer
-- Marquage "Servi" en 1 clic
-- Historique des commandes servies
+### Boissons & Extras
+- Ajout en 1-2 clics depuis la ligne de session
+- Statut bar : En préparation / Servi
+- File bar dédiée (/bar)
 
-### Historique
-- Navigation par jour
-- Tableau complet des sessions
-- Export CSV quotidien
+### Autres pages
+- /bar — File bar du jour
+- /historique — Jour / Semaine / Mois + export CSV
+- /stats — Top boissons/extras, heures d'affluence, KPIs globaux
+- /catalogue — Consultation du catalogue
 
-### Catalogue
-- Vue des boissons (chaud/froid)
-- Vue des extras
+---
+
+## Structure
+
+```
+src/
+  app/
+    page.tsx                    Dashboard principal
+    actions/sessions.ts         Server Actions
+    (dashboard)/
+      DashboardClient.tsx       Table + navigation date
+      bar/                      File bar
+      historique/               Historique
+      stats/                    Statistiques
+      catalogue/                Catalogue
+  components/
+    sessions/  SessionRow, CreateSessionModal, EditSessionModal...
+    bar/       BarQueue
+    dashboard/ KPIBar
+    ui/        Button, Modal, Input, Select, Badge
+  lib/
+    db.ts          Proxy local/Supabase automatique
+    localDb.ts     Base JSON locale
+    supabaseDb.ts  Base Supabase
+    utils.ts       Helpers + CSV + Excel
+    constants.ts   Zones, statuts
+
+data/db.json       Base locale avec seed complet
+supabase/schema.sql  Schéma PostgreSQL
+supabase/seed.sql    Données de référence
+```
 
 ---
 
 ## Déploiement Vercel
 
 ```bash
-# Connecter le repo à Vercel
-vercel
-
-# Ajouter les variables d'environnement dans Vercel Dashboard
-# Déployer
-vercel --prod
+git push origin main
+# Connecter le repo sur vercel.com
+# Ajouter les 4 variables d'env dans Vercel (USE_LOCAL_DB=false + Supabase)
 ```
 
----
+## iPad PWA
 
-## Scripts disponibles
-
-```bash
-npm run dev          # Développement local
-npm run build        # Build de production
-npm run start        # Serveur de production
-npm run type-check   # Vérification TypeScript
-```
-
----
-
-## Roadmap V2
-
-- [ ] Supabase Realtime (mise à jour auto sans refresh)
-- [ ] Gestion du catalogue (ajout/modification boissons)
-- [ ] Statistiques hebdomadaires / mensuelles
-- [ ] Mode iPad (layout optimisé touch)
-- [ ] Impression reçu
-- [ ] Gestion multi-staff (qui a créé la session)
-
----
-
-Fait avec ☕ pour NOMA Café Coworking, Toulouse.
+Safari > Partager > "Ajouter à l'écran d'accueil"
+L'app s'ouvre en plein écran, sans barre Safari.
