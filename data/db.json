@@ -197,6 +197,24 @@
       "created_by": null,
       "created_at": "2026-03-20T10:27:46.159Z",
       "updated_at": "2026-03-20T10:28:15.504Z"
+    },
+    {
+      "id": "9c3b75bf-ba9f-4a19-9856-7d8a74885d28",
+      "date": "2026-03-20",
+      "first_name": "basile",
+      "last_name": null,
+      "zone_id": null,
+      "zone_name": null,
+      "arrival_time": "2026-03-20T12:40:28.178Z",
+      "departure_time": null,
+      "duration_minutes": null,
+      "status": "active",
+      "notes": null,
+      "is_day_pass": false,
+      "day_pass_price": null,
+      "created_by": null,
+      "created_at": "2026-03-20T12:40:28.178Z",
+      "updated_at": "2026-03-20T12:40:28.178Z"
     }
   ],
   "session_drinks": [
