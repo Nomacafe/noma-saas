@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import { ZONES, DAY_PASS_DEFAULT_PRICE } from '@/lib/constants'
-import { createSession } from '@/app/actions/sessions'
 import { Sun } from 'lucide-react'
 
 interface CreateSessionModalProps {
@@ -23,7 +22,7 @@ export default function CreateSessionModal({ open, onClose, onSuccess }: CreateS
   const [isDayPass,    setIsDayPass]    = useState(false)
   const [dayPassPrice, setDayPassPrice] = useState<string>(String(DAY_PASS_DEFAULT_PRICE))
   const [error,        setError]        = useState('')
-  const [isPending,    startTransition] = useTransition()
+  const [isPending,    setIsPending]    = useState(false)
 
   function reset() {
     setFirstName(''); setLastName(''); setZone(''); setNotes('')
@@ -32,21 +31,37 @@ export default function CreateSessionModal({ open, onClose, onSuccess }: CreateS
 
   function handleClose() { reset(); onClose() }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!firstName.trim()) { setError('Le prénom est requis'); return }
     setError('')
-    startTransition(async () => {
-      const result = await createSession({
-        first_name:     firstName.trim(),
-        last_name:      lastName.trim() || undefined,
-        zone_name:      zone || undefined,
-        notes:          notes.trim() || undefined,
-        is_day_pass:    isDayPass,
-        day_pass_price: isDayPass ? parseFloat(dayPassPrice) || null : null,
+    setIsPending(true)
+    try {
+      const res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name:     firstName.trim(),
+          last_name:      lastName.trim() || null,
+          zone_name:      zone || null,
+          notes:          notes.trim() || null,
+          is_day_pass:    isDayPass,
+          day_pass_price: isDayPass ? parseFloat(dayPassPrice) || null : null,
+        }),
       })
-      if (result.error) { setError(result.error) } else { reset(); onSuccess(); onClose() }
-    })
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        setError(data.error || 'Erreur lors de la création')
+      } else {
+        reset()
+        onSuccess()
+        onClose()
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur réseau')
+    } finally {
+      setIsPending(false)
+    }
   }
 
   return (
@@ -65,7 +80,6 @@ export default function CreateSessionModal({ open, onClose, onSuccess }: CreateS
           options={ZONES.map(z => ({ value: z, label: z }))}
         />
 
-        {/* Toggle journée */}
         <div className={`rounded-2xl border-2 p-4 transition-colors ${isDayPass ? 'border-amber-400 bg-amber-50' : 'border-slate-200 bg-slate-50'}`}>
           <label className="flex items-center justify-between cursor-pointer">
             <div className="flex items-center gap-3">
