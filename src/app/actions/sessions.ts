@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { AddDrinkInput, AddExtraInput, CreateSessionInput } from '@/types'
 import {
   db_createSession, db_stopSession, db_cancelSession, db_updateSession,
-  db_addDrink, db_addExtra, db_serveDrink,
+  db_addDrink, db_addExtra, db_serveDrink, db_deleteDrink, db_replaceDrink,
   db_getSessionsForDate, db_getSessionsForRange,
   db_getKPIForDate, db_getCatalog, db_getFullCatalog, db_getStats,
 } from '@/lib/db'
@@ -110,6 +110,37 @@ export async function serveDrink(drinkId: string) {
     if (result.error) return { error: result.error }
     revalidatePath('/bar')
     revalidatePath('/')
+    return { error: null }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Erreur inconnue' }
+  }
+}
+
+export async function deleteDrink(drinkId: string) {
+  try {
+    const result = await db_deleteDrink(drinkId)
+    if (result.error) return { error: result.error }
+    revalidatePath('/')
+    revalidatePath('/bar')
+    return { error: null }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Erreur inconnue' }
+  }
+}
+
+export async function replaceDrink(input: {
+  old_drink_id: string
+  session_id: string
+  drink_id: string
+  drink_name: string
+  quantity: number
+  addon_ids: string[]
+}) {
+  try {
+    const result = await db_replaceDrink(input)
+    if (result.error) return { error: result.error }
+    revalidatePath('/')
+    revalidatePath('/bar')
     return { error: null }
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Erreur inconnue' }

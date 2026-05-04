@@ -4,7 +4,7 @@ import { useState, useCallback, useTransition } from 'react'
 import { SessionWithDetails } from '@/types'
 import Header from '@/components/layout/Header'
 import BarQueue from '@/components/bar/BarQueue'
-import { Coffee, CheckCircle, RefreshCw } from 'lucide-react'
+import { Coffee, CheckCircle, RefreshCw, Timer } from 'lucide-react'
 import { getSessionsForDate } from '@/app/actions/sessions'
 import { todayISO, formatTime } from '@/lib/utils'
 
@@ -83,24 +83,37 @@ export default function BarPageClient({ initialSessions }: Props) {
                   Aucune commande servie
                 </div>
               ) : (
-                servedItems.map(({ drink, session }) => (
-                  <div
-                    key={drink.id}
-                    className="bg-white rounded-2xl border border-green-100 px-4 py-3 flex items-center gap-4 opacity-70"
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
-                      <CheckCircle size={16} className="text-green-500" />
+                servedItems.map(({ drink, session }) => {
+                  const prepMins = drink.served_at
+                    ? Math.round((new Date(drink.served_at).getTime() - new Date(drink.added_at).getTime()) / 60000)
+                    : null
+                  return (
+                    <div
+                      key={drink.id}
+                      className="bg-white rounded-2xl border border-green-100 px-4 py-3 flex items-center gap-4 opacity-70"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
+                        <CheckCircle size={16} className="text-green-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-slate-900 text-sm truncate">
+                          {drink.quantity > 1 && `${drink.quantity}× `}{drink.drink_name}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate">
+                          {session.first_name}
+                          {session.zone_name && <span className="ml-1 font-medium">· {session.zone_name}</span>}
+                          {drink.served_at && <span> · servi à {formatTime(drink.served_at)}</span>}
+                        </p>
+                      </div>
+                      {prepMins !== null && prepMins >= 0 && (
+                        <div className="shrink-0 flex items-center gap-1 text-xs font-semibold text-slate-400 bg-slate-50 px-2 py-1 rounded-lg">
+                          <Timer size={11} />
+                          {prepMins} min
+                        </div>
+                      )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-slate-900 text-sm truncate">
-                        {drink.quantity > 1 && `${drink.quantity}× `}{drink.drink_name}
-                      </p>
-                      <p className="text-xs text-slate-500 truncate">
-                        {session.first_name} · servi {drink.served_at ? formatTime(drink.served_at) : ''}
-                      </p>
-                    </div>
-                  </div>
-                ))
+                  )
+                })
               )}
             </div>
           </div>

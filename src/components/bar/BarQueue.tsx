@@ -2,7 +2,7 @@
 
 import { SessionDrink, SessionWithDetails } from '@/types'
 import { formatTime } from '@/lib/utils'
-import { CheckCircle, Coffee } from 'lucide-react'
+import { CheckCircle, Coffee, MapPin } from 'lucide-react'
 import { useTransition } from 'react'
 import { serveDrink } from '@/app/actions/sessions'
 
@@ -46,16 +46,24 @@ export default function BarQueue({ items, onRefresh }: BarQueueProps) {
             <Coffee size={18} className="text-amber-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-slate-900 text-sm truncate">
-              {drink.quantity > 1 && `${drink.quantity}× `}{drink.drink_name}
-            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-semibold text-slate-900 text-sm">
+                {drink.quantity > 1 && `${drink.quantity}× `}{drink.drink_name}
+              </p>
+              {session.zone_name && (
+                <span className="shrink-0 flex items-center gap-1 text-xs font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-lg border border-amber-200">
+                  <MapPin size={10} />
+                  {session.zone_name}
+                </span>
+              )}
+            </div>
             {drink.addons && drink.addons.length > 0 && (
               <p className="text-xs text-noma-600 font-medium mt-0.5">
                 + {drink.addons.map(a => a.addon_name).join(', ')}
               </p>
             )}
-            <p className="text-xs text-slate-500 truncate">
-              {session.first_name} {session.last_name ?? ''} · {session.zone_name ?? 'Zone ?'} · {formatTime(drink.added_at)}
+            <p className="text-xs text-slate-500 mt-0.5">
+              {session.first_name} {session.last_name ?? ''} · {formatTime(drink.added_at)}
             </p>
           </div>
           <button

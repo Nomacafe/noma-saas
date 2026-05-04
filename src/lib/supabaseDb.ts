@@ -6,7 +6,7 @@
 import { createClient } from '@supabase/supabase-js'
 import type {
   Session, SessionDrink, SessionExtra,
-  DrinkCatalog, ExtraCatalog, DrinkAddon, StatsData,
+  DrinkCatalog, ExtraCatalog, DrinkAddon, StatsData, PrepTimeStat, PrepTimeByRank,
 } from '@/types'
 
 function getClient() {
@@ -211,6 +211,71 @@ export async function db_serveDrink(drinkId: string): Promise<{ error?: string }
   return {}
 }
 
+export async function db_deleteDrink(drinkId: string): Promise<{ error?: string }> {
+  const supabase = getClient()
+  const { error } = await supabase.from('session_drinks').delete().eq('id', drinkId)
+  if (error) return { error: error.message }
+  return {}
+}
+
+export async function db_replaceDrink(input: {
+  old_drink_id: string
+  session_id: string
+  drink_id: string
+  drink_name: string
+  quantity: number
+  addon_ids: string[]
+}): Promise<{ error?: string }> {
+  const supabase = getClient()
+
+  const { data: oldDrink } = await supabase
+    .from('session_drinks')
+    .select('added_at')
+    .eq('id', input.old_drink_id)
+    .single()
+
+  const added_at = oldDrink?.added_at ?? new Date().toISOString()
+
+  await supabase.from('session_drinks').delete().eq('id', input.old_drink_id)
+
+  let addons: DrinkAddon[] = []
+  if (input.addon_ids.length > 0) {
+    const { data } = await supabase.from('drink_addons').select('*').in('id', input.addon_ids)
+    addons = (data ?? []) as DrinkAddon[]
+  }
+  const addonTotal = addons.reduce((sum, a) => sum + (a.price ?? 0), 0)
+
+  const { data: newDrink, error: drinkErr } = await supabase
+    .from('session_drinks')
+    .insert({
+      session_id: input.session_id,
+      drink_id:   input.drink_id,
+      drink_name: input.drink_name,
+      quantity:   input.quantity,
+      bar_status: 'preparing',
+      added_at,
+      line_total: addonTotal > 0 ? addonTotal * input.quantity : null,
+    })
+    .select()
+    .single()
+  if (drinkErr) return { error: drinkErr.message }
+
+  if (addons.length > 0) {
+    const now = new Date().toISOString()
+    const { error: addonsErr } = await supabase
+      .from('session_drink_addons')
+      .insert(addons.map(a => ({
+        session_drink_id: newDrink.id,
+        addon_id:         a.id,
+        addon_name:       a.name,
+        price_snapshot:   a.price,
+        created_at:       now,
+      })))
+    if (addonsErr) return { error: addonsErr.message }
+  }
+  return {}
+}
+
 // ─── Extras ──────────────────────────────────────────────────────────────────
 
 export async function db_addExtra(input: {
@@ -266,7 +331,7 @@ export async function db_getStats(): Promise<StatsData> {
   const supabase = getClient()
   const [{ data: sessions }, { data: drinks }, { data: extras }] = await Promise.all([
     supabase.from('sessions').select('id, status, is_day_pass, arrival_time, zone_name, duration_minutes'),
-    supabase.from('session_drinks').select('drink_name, quantity, session_id'),
+    supabase.from('session_drinks').select('drink_name, quantity, session_id, added_at, served_at, bar_status'),
     supabase.from('session_extras').select('extra_name, quantity, session_id'),
   ])
 
@@ -312,6 +377,48 @@ export async function db_getStats(): Promise<StatsData> {
     .map(([zone, count]) => ({ zone, count }))
     .sort((a, b) => b.count - a.count)
 
+  // Temps de préparation moyen par boisson
+  const drinkPrepAcc: Record<string, { total: number; count: number }> = {}
+  for (const d of allDrinks) {
+    if (d.bar_status === 'served' && d.served_at && d.added_at) {
+      const mins = Math.round((new Date(d.served_at).getTime() - new Date(d.added_at).getTime()) / 60000)
+      if (mins >= 0) {
+        if (!drinkPrepAcc[d.drink_name]) drinkPrepAcc[d.drink_name] = { total: 0, count: 0 }
+        drinkPrepAcc[d.drink_name].total += mins
+        drinkPrepAcc[d.drink_name].count++
+      }
+    }
+  }
+  const avg_prep_time_per_drink: PrepTimeStat[] = Object.entries(drinkPrepAcc)
+    .map(([drink_name, { total, count }]) => ({ drink_name, avg_minutes: Math.round(total / count), count }))
+    .sort((a, b) => b.count - a.count)
+
+  // Temps de préparation par rang (1ère, 2ème, 3ème boisson de la session)
+  const drinksBySession: Record<string, { added_at: string; served_at: string | null; bar_status: string }[]> = {}
+  for (const d of allDrinks) {
+    if (!drinksBySession[d.session_id]) drinksBySession[d.session_id] = []
+    drinksBySession[d.session_id].push(d)
+  }
+  const rankAcc: Record<number, { total: number; count: number }> = {}
+  for (const drinks of Object.values(drinksBySession)) {
+    const sorted = [...drinks].sort((a, b) => new Date(a.added_at).getTime() - new Date(b.added_at).getTime())
+    sorted.forEach((d, i) => {
+      if (d.bar_status === 'served' && d.served_at) {
+        const rank = i + 1
+        const mins = Math.round((new Date(d.served_at).getTime() - new Date(d.added_at).getTime()) / 60000)
+        if (mins >= 0) {
+          if (!rankAcc[rank]) rankAcc[rank] = { total: 0, count: 0 }
+          rankAcc[rank].total += mins
+          rankAcc[rank].count++
+        }
+      }
+    })
+  }
+  const prep_time_by_rank: PrepTimeByRank[] = Object.entries(rankAcc)
+    .map(([rank, { total, count }]) => ({ rank: Number(rank), avg_minutes: Math.round(total / count), count }))
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, 5)
+
   return {
     top_drinks,
     top_extras,
@@ -324,5 +431,7 @@ export async function db_getStats(): Promise<StatsData> {
     total_extras:      allExtras.reduce((a, e) => a + e.quantity, 0),
     sessions_by_hour,
     sessions_by_zone,
+    avg_prep_time_per_drink,
+    prep_time_by_rank,
   }
 }

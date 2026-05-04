@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db_addDrink, db_addExtra, db_serveDrink } from '@/lib/db'
+import { db_addDrink, db_addExtra, db_serveDrink, db_deleteDrink, db_replaceDrink } from '@/lib/db'
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,6 +31,25 @@ export async function POST(req: NextRequest) {
 
     if (action === 'serve_drink') {
       const result = await db_serveDrink(body.drink_id)
+      if (result.error) return NextResponse.json({ error: result.error }, { status: 400 })
+      return NextResponse.json({ success: true })
+    }
+
+    if (action === 'delete_drink') {
+      const result = await db_deleteDrink(body.drink_id)
+      if (result.error) return NextResponse.json({ error: result.error }, { status: 400 })
+      return NextResponse.json({ success: true })
+    }
+
+    if (action === 'replace_drink') {
+      const result = await db_replaceDrink({
+        old_drink_id: body.old_drink_id,
+        session_id:   body.session_id,
+        drink_id:     body.drink_id,
+        drink_name:   body.drink_name,
+        quantity:     body.quantity ?? 1,
+        addon_ids:    body.addon_ids ?? [],
+      })
       if (result.error) return NextResponse.json({ error: result.error }, { status: 400 })
       return NextResponse.json({ success: true })
     }

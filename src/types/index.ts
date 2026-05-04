@@ -14,6 +14,7 @@ export interface DrinkCatalog {
   id: string
   name: string
   category: DrinkCategory
+  description?: string | null
   price: number | null
   is_active: boolean
   sort_order: number
@@ -23,6 +24,7 @@ export interface DrinkCatalog {
 export interface ExtraCatalog {
   id: string
   name: string
+  category?: string | null
   price: number | null
   is_active: boolean
   sort_order: number
@@ -150,6 +152,18 @@ export interface ZoneStat {
   count: number
 }
 
+export interface PrepTimeStat {
+  drink_name: string
+  avg_minutes: number
+  count: number
+}
+
+export interface PrepTimeByRank {
+  rank: number
+  avg_minutes: number
+  count: number
+}
+
 export interface StatsData {
   top_drinks: DrinkStat[]
   top_extras: ExtraStat[]
@@ -162,4 +176,6 @@ export interface StatsData {
   total_extras: number
   sessions_by_hour: HourStat[]
   sessions_by_zone: ZoneStat[]
+  avg_prep_time_per_drink: PrepTimeStat[]
+  prep_time_by_rank: PrepTimeByRank[]
 }

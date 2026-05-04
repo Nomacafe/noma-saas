@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import { ExtraCatalog, SessionWithDetails } from '@/types'
-import { Cookie } from 'lucide-react'
+import { Cookie, Droplets, Sandwich } from 'lucide-react'
 
 interface AddExtraModalProps {
   open: boolean
@@ -13,6 +13,29 @@ interface AddExtraModalProps {
   session: SessionWithDetails | null
   extras: ExtraCatalog[]
 }
+
+const CATEGORY_CONFIG: Record<string, { label: string; icon: React.ElementType; btnClass: string; sectionClass: string }> = {
+  boisson: {
+    label: '🥤 Boissons',
+    icon: Droplets,
+    btnClass: 'bg-blue-50 hover:bg-blue-100 hover:border-blue-300 border border-transparent text-blue-800',
+    sectionClass: 'bg-blue-50/60 border border-blue-100 rounded-xl p-3',
+  },
+  sale: {
+    label: '🥙 Salé',
+    icon: Sandwich,
+    btnClass: 'bg-orange-50 hover:bg-orange-100 hover:border-orange-300 border border-transparent text-orange-800',
+    sectionClass: 'bg-orange-50/60 border border-orange-100 rounded-xl p-3',
+  },
+  sucre: {
+    label: '🍪 Pâtisseries',
+    icon: Cookie,
+    btnClass: 'bg-purple-50 hover:bg-purple-100 hover:border-purple-300 border border-transparent text-purple-800',
+    sectionClass: 'bg-purple-50/60 border border-purple-100 rounded-xl p-3',
+  },
+}
+
+const CATEGORY_ORDER = ['boisson', 'sale', 'sucre']
 
 export default function AddExtraModal({ open, onClose, onSuccess, session, extras }: AddExtraModalProps) {
   const [isPending, setIsPending] = useState(false)
@@ -48,22 +71,62 @@ export default function AddExtraModal({ open, onClose, onSuccess, session, extra
 
   const activeExtras = extras.filter(e => e.is_active).sort((a, b) => a.sort_order - b.sort_order)
 
+  const grouped = CATEGORY_ORDER.reduce<Record<string, ExtraCatalog[]>>((acc, cat) => {
+    acc[cat] = activeExtras.filter(e => (e.category ?? 'sucre') === cat)
+    return acc
+  }, {})
+
+  // Extras without a known category go to 'sucre' bucket
+  const unknownExtras = activeExtras.filter(e => !e.category || !CATEGORY_ORDER.includes(e.category))
+  if (unknownExtras.length > 0) {
+    grouped['sucre'] = [...(grouped['sucre'] ?? []), ...unknownExtras.filter(u => !grouped['sucre']?.find(x => x.id === u.id))]
+  }
+
+  const hasCategories = CATEGORY_ORDER.some(cat => grouped[cat]?.length > 0)
+
   return (
     <Modal open={open} onClose={onClose} title={`Ajouter un extra — ${session?.first_name ?? ''}`} size="md">
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-2">
-          {activeExtras.map(extra => (
-            <button
-              key={extra.id}
-              onClick={() => handleQuickAdd(extra)}
-              disabled={isPending}
-              className="flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-50 hover:bg-purple-50 hover:border-purple-200 border border-transparent text-sm font-medium text-slate-700 hover:text-purple-700 transition-all duration-150 text-left active:scale-[0.97]"
-            >
-              <Cookie size={15} className="text-purple-400 shrink-0" />
-              {extra.name}
-            </button>
-          ))}
-        </div>
+        {hasCategories ? (
+          CATEGORY_ORDER.map(cat => {
+            const items = grouped[cat]
+            if (!items?.length) return null
+            const config = CATEGORY_CONFIG[cat]
+            return (
+              <div key={cat} className={config.sectionClass}>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  {config.label}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {items.map(extra => (
+                    <button
+                      key={extra.id}
+                      onClick={() => handleQuickAdd(extra)}
+                      disabled={isPending}
+                      className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150 text-left active:scale-[0.97] ${config.btnClass}`}
+                    >
+                      {extra.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )
+          })
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            {activeExtras.map(extra => (
+              <button
+                key={extra.id}
+                onClick={() => handleQuickAdd(extra)}
+                disabled={isPending}
+                className="flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-50 hover:bg-purple-50 hover:border-purple-200 border border-transparent text-sm font-medium text-slate-700 hover:text-purple-700 transition-all duration-150 text-left active:scale-[0.97]"
+              >
+                <Cookie size={15} className="text-purple-400 shrink-0" />
+                {extra.name}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="pt-2 border-t border-slate-100">
           <Button variant="secondary" onClick={onClose} className="w-full">Fermer</Button>
         </div>

@@ -1,9 +1,9 @@
 'use client'
 
-import { SessionWithDetails } from '@/types'
+import { SessionWithDetails, SessionDrink } from '@/types'
 import { useTimer } from '@/hooks/useTimer'
 import { formatTime, formatDuration, calcDurationMinutes } from '@/lib/utils'
-import { Coffee, Cookie, Plus, Square, X, Pencil, Sun } from 'lucide-react'
+import { Coffee, Cookie, Plus, Square, X, Pencil, Sun, Trash2, RefreshCw } from 'lucide-react'
 import Badge from '@/components/ui/Badge'
 
 interface SessionRowProps {
@@ -13,6 +13,8 @@ interface SessionRowProps {
   onStop: (session: SessionWithDetails) => void
   onCancel: (session: SessionWithDetails) => void
   onEdit: (session: SessionWithDetails) => void
+  onDeleteDrink?: (drinkId: string) => void
+  onReplaceDrink?: (drink: SessionDrink, session: SessionWithDetails) => void
 }
 
 export default function SessionRow({
@@ -22,6 +24,8 @@ export default function SessionRow({
   onStop,
   onCancel,
   onEdit,
+  onDeleteDrink,
+  onReplaceDrink,
 }: SessionRowProps) {
   const timer      = useTimer(session.arrival_time, session.status === 'active')
   const isActive   = session.status === 'active'
@@ -142,13 +146,25 @@ export default function SessionRow({
         )}
       </td>
 
-      {/* Consommations */}
+      {/* Consommations — extras en premier (plus visibles), puis boissons */}
       <td className="px-4 py-3">
-        <div className="flex flex-wrap gap-1 max-w-[280px]">
+        <div className="flex flex-wrap gap-1 max-w-[300px]">
+          {/* Extras EN PREMIER — orange pour être bien visibles */}
+          {session.session_extras.map(e => (
+            <span
+              key={e.id}
+              className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-semibold bg-orange-100 text-orange-700 border border-orange-200"
+            >
+              <Cookie size={10} />
+              {e.quantity > 1 && `${e.quantity}× `}{e.extra_name}
+            </span>
+          ))}
+
+          {/* Boissons avec boutons supprimer/remplacer au survol */}
           {session.session_drinks.map(d => (
             <span
               key={d.id}
-              className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium ${
+              className={`group/drink relative inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium ${
                 d.bar_status === 'served'
                   ? 'bg-green-50 text-green-700'
                   : 'bg-amber-50 text-amber-700 border border-amber-100'
@@ -166,17 +182,31 @@ export default function SessionRow({
               }`}>
                 • {d.bar_status === 'served' ? 'Servi' : 'Prép.'}
               </span>
+              {isActive && (onDeleteDrink || onReplaceDrink) && (
+                <span className="hidden group-hover/drink:inline-flex items-center gap-0.5 ml-1">
+                  {onReplaceDrink && (
+                    <button
+                      onClick={e => { e.stopPropagation(); onReplaceDrink(d, session) }}
+                      className="p-0.5 rounded hover:bg-blue-100 text-slate-400 hover:text-blue-600 transition-colors"
+                      title="Remplacer"
+                    >
+                      <RefreshCw size={9} />
+                    </button>
+                  )}
+                  {onDeleteDrink && (
+                    <button
+                      onClick={e => { e.stopPropagation(); onDeleteDrink(d.id) }}
+                      className="p-0.5 rounded hover:bg-red-100 text-slate-400 hover:text-red-600 transition-colors"
+                      title="Supprimer"
+                    >
+                      <Trash2 size={9} />
+                    </button>
+                  )}
+                </span>
+              )}
             </span>
           ))}
-          {session.session_extras.map(e => (
-            <span
-              key={e.id}
-              className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium bg-purple-50 text-purple-700"
-            >
-              <Cookie size={10} />
-              {e.quantity > 1 && `${e.quantity}× `}{e.extra_name}
-            </span>
-          ))}
+
           {drinksCount === 0 && extrasCount === 0 && (
             <span className="text-xs text-slate-300 italic">Aucune</span>
           )}
@@ -188,6 +218,16 @@ export default function SessionRow({
         <div className="flex items-center gap-1 justify-end">
           {isActive ? (
             <>
+              {/* + Extra — en premier pour ne pas oublier */}
+              <button
+                onClick={() => onAddExtra(session)}
+                title="Ajouter un extra"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-semibold transition-colors min-h-[32px] whitespace-nowrap"
+              >
+                <Cookie size={13} />
+                <Plus size={11} />
+              </button>
+
               {/* + Boisson */}
               <button
                 onClick={() => onAddDrink(session)}
@@ -195,16 +235,6 @@ export default function SessionRow({
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-noma-50 hover:bg-noma-100 text-noma-700 text-xs font-semibold transition-colors min-h-[32px] whitespace-nowrap"
               >
                 <Coffee size={13} />
-                <Plus size={11} />
-              </button>
-
-              {/* + Extra */}
-              <button
-                onClick={() => onAddExtra(session)}
-                title="Ajouter un extra"
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold transition-colors min-h-[32px] whitespace-nowrap"
-              >
-                <Cookie size={13} />
                 <Plus size={11} />
               </button>
 

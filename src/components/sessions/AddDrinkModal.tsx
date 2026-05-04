@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import { DrinkCatalog, DrinkAddon, SessionWithDetails } from '@/types'
-import { Coffee, ChevronLeft, Check } from 'lucide-react'
+import { Coffee, ChevronLeft, Check, RefreshCw } from 'lucide-react'
 
 interface AddDrinkModalProps {
   open: boolean
@@ -13,16 +13,19 @@ interface AddDrinkModalProps {
   session: SessionWithDetails | null
   drinks: DrinkCatalog[]
   addons: DrinkAddon[]
+  replaceDrinkId?: string
 }
 
 const CATEGORY_ORDER  = ['hot', 'cold', 'other']
 const CATEGORY_LABELS: Record<string, string> = { hot: '☕ Chaud', cold: '🧊 Froid', other: '✨ Autre' }
 
-export default function AddDrinkModal({ open, onClose, onSuccess, session, drinks, addons }: AddDrinkModalProps) {
+export default function AddDrinkModal({ open, onClose, onSuccess, session, drinks, addons, replaceDrinkId }: AddDrinkModalProps) {
   const [step,           setStep]         = useState<'drink' | 'addons'>('drink')
   const [selectedDrink,  setSelectedDrink]= useState<DrinkCatalog | null>(null)
   const [selectedAddons, setSelectedAddons] = useState<string[]>([])
   const [isPending,      setIsPending]    = useState(false)
+
+  const isReplaceMode = !!replaceDrinkId
 
   function handleClose() {
     setStep('drink'); setSelectedDrink(null); setSelectedAddons([])
@@ -46,21 +49,33 @@ export default function AddDrinkModal({ open, onClose, onSuccess, session, drink
     if (!session) return
     setIsPending(true)
     try {
+      const body = isReplaceMode
+        ? {
+            action:        'replace_drink',
+            old_drink_id:  replaceDrinkId,
+            session_id:    session.id,
+            drink_id:      drink.id,
+            drink_name:    drink.name,
+            quantity:      1,
+            addon_ids:     addonIds,
+          }
+        : {
+            action:     'add_drink',
+            session_id: session.id,
+            drink_id:   drink.id,
+            drink_name: drink.name,
+            quantity:   1,
+            addon_ids:  addonIds,
+          }
+
       const res = await fetch('/api/bar/drinks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action:     'add_drink',
-          session_id: session.id,
-          drink_id:   drink.id,
-          drink_name: drink.name,
-          quantity:   1,
-          addon_ids:  addonIds,
-        }),
+        body: JSON.stringify(body),
       })
       const data = await res.json()
       if (!res.ok || data.error) {
-        console.error('Erreur ajout boisson:', data.error)
+        console.error('Erreur boisson:', data.error)
       } else {
         handleClose()
         onSuccess()
@@ -82,17 +97,22 @@ export default function AddDrinkModal({ open, onClose, onSuccess, session, drink
     .filter(a => selectedAddons.includes(a.id))
     .reduce((sum, a) => sum + (a.price ?? 0), 0)
 
+  const modalTitle = isReplaceMode
+    ? `Remplacer la boisson — ${session?.first_name ?? ''}`
+    : step === 'drink'
+      ? `Boisson — ${session?.first_name ?? ''}`
+      : `Suppléments — ${selectedDrink?.name ?? ''}`
+
   return (
-    <Modal
-      open={open}
-      onClose={handleClose}
-      title={step === 'drink'
-        ? `Boisson — ${session?.first_name ?? ''}`
-        : `Suppléments — ${selectedDrink?.name ?? ''}`}
-      size="lg"
-    >
+    <Modal open={open} onClose={handleClose} title={modalTitle} size="lg">
       {step === 'drink' && (
         <div className="space-y-6">
+          {isReplaceMode && (
+            <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+              <RefreshCw size={14} className="shrink-0" />
+              Choisissez la boisson de remplacement
+            </div>
+          )}
           {CATEGORY_ORDER.map(cat => {
             const items = grouped[cat]
             if (!items?.length) return null
@@ -107,10 +127,15 @@ export default function AddDrinkModal({ open, onClose, onSuccess, session, drink
                       key={drink.id}
                       onClick={() => handlePickDrink(drink)}
                       disabled={isPending}
-                      className="flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-50 hover:bg-noma-50 hover:border-noma-200 border border-transparent text-sm font-medium text-slate-700 hover:text-noma-700 transition-all duration-150 text-left active:scale-[0.97]"
+                      className="flex flex-col items-start gap-1 px-4 py-3 rounded-xl bg-slate-50 hover:bg-noma-50 hover:border-noma-200 border border-transparent text-left active:scale-[0.97] transition-all duration-150"
                     >
-                      <Coffee size={15} className="text-noma-400 shrink-0" />
-                      {drink.name}
+                      <div className="flex items-center gap-2 w-full">
+                        <Coffee size={14} className="text-noma-400 shrink-0" />
+                        <span className="text-sm font-semibold text-slate-700">{drink.name}</span>
+                      </div>
+                      {drink.description && (
+                        <span className="text-[11px] text-slate-400 leading-tight pl-5">{drink.description}</span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -134,7 +159,12 @@ export default function AddDrinkModal({ open, onClose, onSuccess, session, drink
 
           <div className="bg-noma-50 rounded-xl px-4 py-3 flex items-center gap-3">
             <Coffee size={18} className="text-noma-500" />
-            <span className="font-semibold text-noma-800">{selectedDrink.name}</span>
+            <div>
+              <span className="font-semibold text-noma-800">{selectedDrink.name}</span>
+              {selectedDrink.description && (
+                <p className="text-xs text-noma-600 mt-0.5">{selectedDrink.description}</p>
+              )}
+            </div>
           </div>
 
           <div>
@@ -182,7 +212,7 @@ export default function AddDrinkModal({ open, onClose, onSuccess, session, drink
               onClick={() => submitDrink(selectedDrink, selectedAddons)}
               className="flex-1"
             >
-              Ajouter
+              {isReplaceMode ? 'Remplacer' : 'Ajouter'}
               {selectedAddons.length > 0 && ` (${selectedAddons.length} supplément${selectedAddons.length > 1 ? 's' : ''})`}
             </Button>
           </div>

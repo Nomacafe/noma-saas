@@ -20,6 +20,7 @@ import {
   todayISO, formatTime, formatDuration, calcDurationMinutes,
   formatDateShort, generateCSV, generateExcel,
 } from '@/lib/utils'
+import { SessionDrink } from '@/types'
 import { format, parseISO, addDays, subDays } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -36,6 +37,7 @@ type ModalState =
   | { type: 'none' }
   | { type: 'create' }
   | { type: 'drink'; session: SessionWithDetails }
+  | { type: 'replace_drink'; drinkId: string; session: SessionWithDetails }
   | { type: 'extra'; session: SessionWithDetails }
   | { type: 'stop'; session: SessionWithDetails }
   | { type: 'cancel'; session: SessionWithDetails }
@@ -87,6 +89,22 @@ export default function DashboardClient({
   }, [])
 
   const refresh = useCallback(() => loadDate(date), [date, loadDate])
+
+  const handleDeleteDrink = useCallback(async (drinkId: string) => {
+    try {
+      await fetch('/api/bar/drinks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete_drink', drink_id: drinkId }),
+      })
+    } finally {
+      refresh()
+    }
+  }, [refresh])
+
+  const handleReplaceDrink = useCallback((drink: SessionDrink, session: SessionWithDetails) => {
+    setModal({ type: 'replace_drink', drinkId: drink.id, session })
+  }, [])
 
   function goPrev() { loadDate(format(subDays(parseSafeDate(date), 1), 'yyyy-MM-dd')) }
   function goNext() { if (!isToday) loadDate(format(addDays(parseSafeDate(date), 1), 'yyyy-MM-dd')) }
@@ -371,6 +389,8 @@ export default function DashboardClient({
                       onStop={s => setModal({ type: 'stop', session: s })}
                       onCancel={s => setModal({ type: 'cancel', session: s })}
                       onEdit={s => setModal({ type: 'edit', session: s })}
+                      onDeleteDrink={handleDeleteDrink}
+                      onReplaceDrink={handleReplaceDrink}
                     />
                   ))}
                 </tbody>
@@ -388,12 +408,16 @@ export default function DashboardClient({
       />
 
       <AddDrinkModal
-        open={modal.type === 'drink'}
+        open={modal.type === 'drink' || modal.type === 'replace_drink'}
         onClose={closeModal}
         onSuccess={refresh}
-        session={modal.type === 'drink' ? modal.session : null}
+        session={
+          modal.type === 'drink' ? modal.session :
+          modal.type === 'replace_drink' ? modal.session : null
+        }
         drinks={drinks}
         addons={addons}
+        replaceDrinkId={modal.type === 'replace_drink' ? modal.drinkId : undefined}
       />
 
       <AddExtraModal

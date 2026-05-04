@@ -7,7 +7,7 @@ import fs from 'fs'
 import path from 'path'
 import {
   Session, SessionDrink, SessionDrinkAddon, SessionExtra,
-  DrinkCatalog, ExtraCatalog, DrinkAddon, StatsData
+  DrinkCatalog, ExtraCatalog, DrinkAddon, StatsData, PrepTimeStat, PrepTimeByRank
 } from '@/types'
 
 const DB_PATH = path.join(process.cwd(), 'data', 'db.json')
@@ -244,6 +244,65 @@ export function db_serveDrink(drinkId: string): { error?: string } {
   return {}
 }
 
+export function db_deleteDrink(drinkId: string): { error?: string } {
+  const db = readDb()
+  const idx = db.session_drinks.findIndex(d => d.id === drinkId)
+  if (idx === -1) return { error: 'Boisson introuvable' }
+  db.session_drinks.splice(idx, 1)
+  db.session_drink_addons = db.session_drink_addons.filter(a => a.session_drink_id !== drinkId)
+  writeDb(db)
+  return {}
+}
+
+export function db_replaceDrink(input: {
+  old_drink_id: string
+  session_id: string
+  drink_id: string
+  drink_name: string
+  quantity: number
+  addon_ids: string[]
+}): { error?: string } {
+  const db = readDb()
+  const oldDrink = db.session_drinks.find(d => d.id === input.old_drink_id)
+  const added_at = oldDrink?.added_at ?? new Date().toISOString()
+
+  const oldIdx = db.session_drinks.findIndex(d => d.id === input.old_drink_id)
+  if (oldIdx !== -1) {
+    db.session_drinks.splice(oldIdx, 1)
+    db.session_drink_addons = db.session_drink_addons.filter(a => a.session_drink_id !== input.old_drink_id)
+  }
+
+  const selectedAddons = db.drink_addons.filter(a => input.addon_ids.includes(a.id))
+  const addonTotal = selectedAddons.reduce((sum, a) => sum + (a.price ?? 0), 0)
+  const drinkId = newId()
+
+  const drink: SessionDrink = {
+    id:         drinkId,
+    session_id: input.session_id,
+    drink_id:   input.drink_id,
+    drink_name: input.drink_name,
+    quantity:   input.quantity,
+    bar_status: 'preparing',
+    added_at,
+    served_at:  null,
+    line_total: addonTotal > 0 ? addonTotal * input.quantity : null,
+  }
+  db.session_drinks.push(drink)
+
+  for (const addon of selectedAddons) {
+    db.session_drink_addons.push({
+      id:               newId(),
+      session_drink_id: drinkId,
+      addon_id:         addon.id,
+      addon_name:       addon.name,
+      price_snapshot:   addon.price,
+      created_at:       new Date().toISOString(),
+    })
+  }
+  writeDb(db)
+  return {}
+}
+
 export function db_getBarQueue(): (SessionDrink & { session_first_name: string })[] {
   const db = readDb()
   const activeSessions = db.sessions.filter(s => s.status === 'active')
@@ -354,6 +413,48 @@ export function db_getStats(): StatsData {
   const total_drinks = db.session_drinks.reduce((acc, d) => acc + d.quantity, 0)
   const total_extras = db.session_extras.reduce((acc, e) => acc + e.quantity, 0)
 
+  // Temps de préparation moyen par boisson
+  const drinkPrepAcc: Record<string, { total: number; count: number }> = {}
+  for (const d of db.session_drinks) {
+    if (d.bar_status === 'served' && d.served_at) {
+      const mins = Math.round((new Date(d.served_at).getTime() - new Date(d.added_at).getTime()) / 60000)
+      if (mins >= 0) {
+        if (!drinkPrepAcc[d.drink_name]) drinkPrepAcc[d.drink_name] = { total: 0, count: 0 }
+        drinkPrepAcc[d.drink_name].total += mins
+        drinkPrepAcc[d.drink_name].count++
+      }
+    }
+  }
+  const avg_prep_time_per_drink: PrepTimeStat[] = Object.entries(drinkPrepAcc)
+    .map(([drink_name, { total, count }]) => ({ drink_name, avg_minutes: Math.round(total / count), count }))
+    .sort((a, b) => b.count - a.count)
+
+  // Temps de préparation par rang
+  const drinksBySession: Record<string, SessionDrink[]> = {}
+  for (const d of db.session_drinks) {
+    if (!drinksBySession[d.session_id]) drinksBySession[d.session_id] = []
+    drinksBySession[d.session_id].push(d)
+  }
+  const rankAcc: Record<number, { total: number; count: number }> = {}
+  for (const drinks of Object.values(drinksBySession)) {
+    const sorted = [...drinks].sort((a, b) => new Date(a.added_at).getTime() - new Date(b.added_at).getTime())
+    sorted.forEach((d, i) => {
+      if (d.bar_status === 'served' && d.served_at) {
+        const rank = i + 1
+        const mins = Math.round((new Date(d.served_at).getTime() - new Date(d.added_at).getTime()) / 60000)
+        if (mins >= 0) {
+          if (!rankAcc[rank]) rankAcc[rank] = { total: 0, count: 0 }
+          rankAcc[rank].total += mins
+          rankAcc[rank].count++
+        }
+      }
+    })
+  }
+  const prep_time_by_rank: PrepTimeByRank[] = Object.entries(rankAcc)
+    .map(([rank, { total, count }]) => ({ rank: Number(rank), avg_minutes: Math.round(total / count), count }))
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, 5)
+
   return {
     top_drinks,
     top_extras,
@@ -366,5 +467,7 @@ export function db_getStats(): StatsData {
     total_extras,
     sessions_by_hour,
     sessions_by_zone,
+    avg_prep_time_per_drink,
+    prep_time_by_rank,
   }
 }
