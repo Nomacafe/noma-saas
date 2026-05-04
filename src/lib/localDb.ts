@@ -339,6 +339,37 @@ export function db_addExtra(input: {
   return {}
 }
 
+export function db_deleteExtra(extraId: string): { error?: string } {
+  const db = readDb()
+  const idx = db.session_extras.findIndex(e => e.id === extraId)
+  if (idx === -1) return { error: 'Extra introuvable' }
+  db.session_extras.splice(idx, 1)
+  writeDb(db)
+  return {}
+}
+
+export function db_replaceExtra(input: {
+  old_extra_id: string
+  session_id: string
+  extra_id: string
+  extra_name: string
+  quantity: number
+}): { error?: string } {
+  const db = readDb()
+  const oldIdx = db.session_extras.findIndex(e => e.id === input.old_extra_id)
+  if (oldIdx !== -1) db.session_extras.splice(oldIdx, 1)
+  db.session_extras.push({
+    id:         newId(),
+    session_id: input.session_id,
+    extra_id:   input.extra_id,
+    extra_name: input.extra_name,
+    quantity:   input.quantity,
+    added_at:   new Date().toISOString(),
+  })
+  writeDb(db)
+  return {}
+}
+
 // ─── Catalogue ────────────────────────────────────────────────────────────────
 
 export function db_getCatalog() {

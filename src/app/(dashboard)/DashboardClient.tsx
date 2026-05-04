@@ -20,7 +20,7 @@ import {
   todayISO, formatTime, formatDuration, calcDurationMinutes,
   formatDateShort, generateCSV, generateExcel,
 } from '@/lib/utils'
-import { SessionDrink } from '@/types'
+import { SessionDrink, SessionExtra } from '@/types'
 import { format, parseISO, addDays, subDays } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -39,6 +39,7 @@ type ModalState =
   | { type: 'drink'; session: SessionWithDetails }
   | { type: 'replace_drink'; drinkId: string; session: SessionWithDetails }
   | { type: 'extra'; session: SessionWithDetails }
+  | { type: 'replace_extra'; extraId: string; session: SessionWithDetails }
   | { type: 'stop'; session: SessionWithDetails }
   | { type: 'cancel'; session: SessionWithDetails }
   | { type: 'edit'; session: SessionWithDetails }
@@ -104,6 +105,22 @@ export default function DashboardClient({
 
   const handleReplaceDrink = useCallback((drink: SessionDrink, session: SessionWithDetails) => {
     setModal({ type: 'replace_drink', drinkId: drink.id, session })
+  }, [])
+
+  const handleDeleteExtra = useCallback(async (extraId: string) => {
+    try {
+      await fetch('/api/bar/drinks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete_extra', extra_id: extraId }),
+      })
+    } finally {
+      refresh()
+    }
+  }, [refresh])
+
+  const handleReplaceExtra = useCallback((extra: SessionExtra, session: SessionWithDetails) => {
+    setModal({ type: 'replace_extra', extraId: extra.id, session })
   }, [])
 
   function goPrev() { loadDate(format(subDays(parseSafeDate(date), 1), 'yyyy-MM-dd')) }
@@ -391,6 +408,8 @@ export default function DashboardClient({
                       onEdit={s => setModal({ type: 'edit', session: s })}
                       onDeleteDrink={handleDeleteDrink}
                       onReplaceDrink={handleReplaceDrink}
+                      onDeleteExtra={handleDeleteExtra}
+                      onReplaceExtra={handleReplaceExtra}
                     />
                   ))}
                 </tbody>
@@ -421,11 +440,15 @@ export default function DashboardClient({
       />
 
       <AddExtraModal
-        open={modal.type === 'extra'}
+        open={modal.type === 'extra' || modal.type === 'replace_extra'}
         onClose={closeModal}
         onSuccess={refresh}
-        session={modal.type === 'extra' ? modal.session : null}
+        session={
+          modal.type === 'extra' ? modal.session :
+          modal.type === 'replace_extra' ? modal.session : null
+        }
         extras={extras}
+        replaceExtraId={modal.type === 'replace_extra' ? modal.extraId : undefined}
       />
 
       <StopSessionModal

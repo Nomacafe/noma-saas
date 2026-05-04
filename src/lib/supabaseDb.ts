@@ -295,6 +295,35 @@ export async function db_addExtra(input: {
   return {}
 }
 
+export async function db_deleteExtra(extraId: string): Promise<{ error?: string }> {
+  const supabase = getClient()
+  const { error } = await supabase.from('session_extras').delete().eq('id', extraId)
+  if (error) return { error: error.message }
+  return {}
+}
+
+export async function db_replaceExtra(input: {
+  old_extra_id: string
+  session_id: string
+  extra_id: string
+  extra_name: string
+  quantity: number
+}): Promise<{ error?: string }> {
+  const supabase = getClient()
+  await supabase.from('session_extras').delete().eq('id', input.old_extra_id)
+  const { error } = await supabase
+    .from('session_extras')
+    .insert({
+      session_id: input.session_id,
+      extra_id:   input.extra_id,
+      extra_name: input.extra_name,
+      quantity:   input.quantity,
+      added_at:   new Date().toISOString(),
+    })
+  if (error) return { error: error.message }
+  return {}
+}
+
 // ─── Catalogue ───────────────────────────────────────────────────────────────
 
 export async function db_getCatalog() {

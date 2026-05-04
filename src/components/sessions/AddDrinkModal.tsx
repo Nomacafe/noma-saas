@@ -23,22 +23,20 @@ export default function AddDrinkModal({ open, onClose, onSuccess, session, drink
   const [step,           setStep]         = useState<'drink' | 'addons'>('drink')
   const [selectedDrink,  setSelectedDrink]= useState<DrinkCatalog | null>(null)
   const [selectedAddons, setSelectedAddons] = useState<string[]>([])
+  const [temperature,    setTemperature]  = useState<'hot' | 'ice'>('hot')
   const [isPending,      setIsPending]    = useState(false)
 
   const isReplaceMode = !!replaceDrinkId
 
   function handleClose() {
-    setStep('drink'); setSelectedDrink(null); setSelectedAddons([])
+    setStep('drink'); setSelectedDrink(null); setSelectedAddons([]); setTemperature('hot')
     onClose()
   }
 
   function handlePickDrink(drink: DrinkCatalog) {
     setSelectedDrink(drink)
-    if (!activeAddons.length) {
-      submitDrink(drink, [])
-    } else {
-      setStep('addons')
-    }
+    setTemperature('hot')
+    setStep('addons')
   }
 
   function toggleAddon(id: string) {
@@ -48,6 +46,7 @@ export default function AddDrinkModal({ open, onClose, onSuccess, session, drink
   async function submitDrink(drink: DrinkCatalog, addonIds: string[]) {
     if (!session) return
     setIsPending(true)
+    const drinkName = temperature === 'ice' ? `${drink.name} (Glacé)` : drink.name
     try {
       const body = isReplaceMode
         ? {
@@ -55,7 +54,7 @@ export default function AddDrinkModal({ open, onClose, onSuccess, session, drink
             old_drink_id:  replaceDrinkId,
             session_id:    session.id,
             drink_id:      drink.id,
-            drink_name:    drink.name,
+            drink_name:    drinkName,
             quantity:      1,
             addon_ids:     addonIds,
           }
@@ -63,7 +62,7 @@ export default function AddDrinkModal({ open, onClose, onSuccess, session, drink
             action:     'add_drink',
             session_id: session.id,
             drink_id:   drink.id,
-            drink_name: drink.name,
+            drink_name: drinkName,
             quantity:   1,
             addon_ids:  addonIds,
           }
@@ -167,36 +166,67 @@ export default function AddDrinkModal({ open, onClose, onSuccess, session, drink
             </div>
           </div>
 
+          {/* Température */}
           <div>
-            <p className="text-sm font-semibold text-slate-700 mb-3">Suppléments (optionnel)</p>
-            <div className="grid grid-cols-2 gap-2">
-              {activeAddons.map(addon => {
-                const checked = selectedAddons.includes(addon.id)
-                return (
-                  <button
-                    key={addon.id}
-                    type="button"
-                    onClick={() => toggleAddon(addon.id)}
-                    className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
-                      checked
-                        ? 'border-noma-400 bg-noma-50 text-noma-800'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                    }`}
-                  >
-                    <span>{addon.name}</span>
-                    <div className="flex items-center gap-2">
-                      {addon.price != null && (
-                        <span className="text-xs text-slate-400">+{addon.price.toFixed(2)}€</span>
-                      )}
-                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center ${checked ? 'border-noma-500 bg-noma-500' : 'border-slate-300'}`}>
-                        {checked && <Check size={12} className="text-white" />}
-                      </div>
-                    </div>
-                  </button>
-                )
-              })}
+            <p className="text-sm font-semibold text-slate-700 mb-2">Température</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setTemperature('hot')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
+                  temperature === 'hot'
+                    ? 'border-orange-400 bg-orange-50 text-orange-800'
+                    : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                }`}
+              >
+                ☕ Chaud
+              </button>
+              <button
+                type="button"
+                onClick={() => setTemperature('ice')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
+                  temperature === 'ice'
+                    ? 'border-blue-400 bg-blue-50 text-blue-800'
+                    : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                }`}
+              >
+                🧊 Glacé
+              </button>
             </div>
           </div>
+
+          {activeAddons.length > 0 && (
+            <div>
+              <p className="text-sm font-semibold text-slate-700 mb-3">Suppléments (optionnel)</p>
+              <div className="grid grid-cols-2 gap-2">
+                {activeAddons.map(addon => {
+                  const checked = selectedAddons.includes(addon.id)
+                  return (
+                    <button
+                      key={addon.id}
+                      type="button"
+                      onClick={() => toggleAddon(addon.id)}
+                      className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                        checked
+                          ? 'border-noma-400 bg-noma-50 text-noma-800'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                      }`}
+                    >
+                      <span>{addon.name}</span>
+                      <div className="flex items-center gap-2">
+                        {addon.price != null && (
+                          <span className="text-xs text-slate-400">+{addon.price.toFixed(2)}€</span>
+                        )}
+                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center ${checked ? 'border-noma-500 bg-noma-500' : 'border-slate-300'}`}>
+                          {checked && <Check size={12} className="text-white" />}
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {selectedAddons.length > 0 && addonTotal > 0 && (
             <div className="bg-slate-50 rounded-xl px-4 py-2 text-sm text-slate-600">

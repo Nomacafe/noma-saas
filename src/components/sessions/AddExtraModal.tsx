@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import { ExtraCatalog, SessionWithDetails } from '@/types'
-import { Cookie, Droplets, Sandwich } from 'lucide-react'
+import { Cookie, Droplets, Sandwich, RefreshCw } from 'lucide-react'
 
 interface AddExtraModalProps {
   open: boolean
@@ -12,6 +12,7 @@ interface AddExtraModalProps {
   onSuccess: () => void
   session: SessionWithDetails | null
   extras: ExtraCatalog[]
+  replaceExtraId?: string
 }
 
 const CATEGORY_CONFIG: Record<string, { label: string; icon: React.ElementType; btnClass: string; sectionClass: string }> = {
@@ -37,23 +38,36 @@ const CATEGORY_CONFIG: Record<string, { label: string; icon: React.ElementType; 
 
 const CATEGORY_ORDER = ['boisson', 'sale', 'sucre']
 
-export default function AddExtraModal({ open, onClose, onSuccess, session, extras }: AddExtraModalProps) {
+export default function AddExtraModal({ open, onClose, onSuccess, session, extras, replaceExtraId }: AddExtraModalProps) {
   const [isPending, setIsPending] = useState(false)
+
+  const isReplaceMode = !!replaceExtraId
 
   async function handleQuickAdd(extra: ExtraCatalog) {
     if (!session) return
     setIsPending(true)
     try {
+      const body = isReplaceMode
+        ? {
+            action:       'replace_extra',
+            old_extra_id: replaceExtraId,
+            session_id:   session.id,
+            extra_id:     extra.id,
+            extra_name:   extra.name,
+            quantity:     1,
+          }
+        : {
+            action:     'add_extra',
+            session_id: session.id,
+            extra_id:   extra.id,
+            extra_name: extra.name,
+            quantity:   1,
+          }
+
       const res = await fetch('/api/bar/drinks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action:     'add_extra',
-          session_id: session.id,
-          extra_id:   extra.id,
-          extra_name: extra.name,
-          quantity:   1,
-        }),
+        body: JSON.stringify(body),
       })
       const data = await res.json()
       if (!res.ok || data.error) {
@@ -76,7 +90,6 @@ export default function AddExtraModal({ open, onClose, onSuccess, session, extra
     return acc
   }, {})
 
-  // Extras without a known category go to 'sucre' bucket
   const unknownExtras = activeExtras.filter(e => !e.category || !CATEGORY_ORDER.includes(e.category))
   if (unknownExtras.length > 0) {
     grouped['sucre'] = [...(grouped['sucre'] ?? []), ...unknownExtras.filter(u => !grouped['sucre']?.find(x => x.id === u.id))]
@@ -84,9 +97,19 @@ export default function AddExtraModal({ open, onClose, onSuccess, session, extra
 
   const hasCategories = CATEGORY_ORDER.some(cat => grouped[cat]?.length > 0)
 
+  const modalTitle = isReplaceMode
+    ? `Remplacer l'extra — ${session?.first_name ?? ''}`
+    : `Ajouter un extra — ${session?.first_name ?? ''}`
+
   return (
-    <Modal open={open} onClose={onClose} title={`Ajouter un extra — ${session?.first_name ?? ''}`} size="md">
+    <Modal open={open} onClose={onClose} title={modalTitle} size="md">
       <div className="space-y-4">
+        {isReplaceMode && (
+          <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+            <RefreshCw size={14} className="shrink-0" />
+            Choisissez le nouvel extra
+          </div>
+        )}
         {hasCategories ? (
           CATEGORY_ORDER.map(cat => {
             const items = grouped[cat]

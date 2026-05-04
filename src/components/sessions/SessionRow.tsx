@@ -1,6 +1,6 @@
 'use client'
 
-import { SessionWithDetails, SessionDrink } from '@/types'
+import { SessionWithDetails, SessionDrink, SessionExtra } from '@/types'
 import { useTimer } from '@/hooks/useTimer'
 import { formatTime, formatDuration, calcDurationMinutes } from '@/lib/utils'
 import { Coffee, Cookie, Plus, Square, X, Pencil, Sun, Trash2, RefreshCw } from 'lucide-react'
@@ -15,6 +15,8 @@ interface SessionRowProps {
   onEdit: (session: SessionWithDetails) => void
   onDeleteDrink?: (drinkId: string) => void
   onReplaceDrink?: (drink: SessionDrink, session: SessionWithDetails) => void
+  onDeleteExtra?: (extraId: string) => void
+  onReplaceExtra?: (extra: SessionExtra, session: SessionWithDetails) => void
 }
 
 export default function SessionRow({
@@ -26,6 +28,8 @@ export default function SessionRow({
   onEdit,
   onDeleteDrink,
   onReplaceDrink,
+  onDeleteExtra,
+  onReplaceExtra,
 }: SessionRowProps) {
   const timer      = useTimer(session.arrival_time, session.status === 'active')
   const isActive   = session.status === 'active'
@@ -149,14 +153,36 @@ export default function SessionRow({
       {/* Consommations — extras en premier (plus visibles), puis boissons */}
       <td className="px-4 py-3">
         <div className="flex flex-wrap gap-1 max-w-[300px]">
-          {/* Extras EN PREMIER — orange pour être bien visibles */}
+          {/* Extras EN PREMIER — orange avec boutons supprimer/remplacer au survol */}
           {session.session_extras.map(e => (
             <span
               key={e.id}
-              className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-semibold bg-orange-100 text-orange-700 border border-orange-200"
+              className="group/extra relative inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-semibold bg-orange-100 text-orange-700 border border-orange-200"
             >
               <Cookie size={10} />
               {e.quantity > 1 && `${e.quantity}× `}{e.extra_name}
+              {isActive && (onDeleteExtra || onReplaceExtra) && (
+                <span className="hidden group-hover/extra:inline-flex items-center gap-0.5 ml-1">
+                  {onReplaceExtra && (
+                    <button
+                      onClick={ev => { ev.stopPropagation(); onReplaceExtra(e, session) }}
+                      className="p-0.5 rounded hover:bg-blue-100 text-orange-400 hover:text-blue-600 transition-colors"
+                      title="Remplacer"
+                    >
+                      <RefreshCw size={9} />
+                    </button>
+                  )}
+                  {onDeleteExtra && (
+                    <button
+                      onClick={ev => { ev.stopPropagation(); onDeleteExtra(e.id) }}
+                      className="p-0.5 rounded hover:bg-red-100 text-orange-400 hover:text-red-600 transition-colors"
+                      title="Supprimer"
+                    >
+                      <Trash2 size={9} />
+                    </button>
+                  )}
+                </span>
+              )}
             </span>
           ))}
 
