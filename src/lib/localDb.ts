@@ -10,7 +10,11 @@ import {
   DrinkCatalog, ExtraCatalog, DrinkAddon, StatsData, PrepTimeStat, PrepTimeByRank
 } from '@/types'
 
-const DB_PATH = path.join(process.cwd(), 'data', 'db.json')
+const DATA_DIR = path.join(process.cwd(), 'data')
+const DB_PATH = path.join(DATA_DIR, 'db.json')
+// Seed vit hors de data/ : sur Railway, data/ est un volume monté qui masque
+// tout fichier déjà présent dans l'image au même chemin (donc pas db.json ici).
+const SEED_PATH = path.join(process.cwd(), 'seed', 'db.seed.json')
 
 interface DB {
   sessions:            Session[]
@@ -22,7 +26,20 @@ interface DB {
   drink_addons:        DrinkAddon[]
 }
 
+function ensureDb(): void {
+  if (fs.existsSync(DB_PATH)) return
+  fs.mkdirSync(DATA_DIR, { recursive: true })
+  const seed = fs.existsSync(SEED_PATH)
+    ? fs.readFileSync(SEED_PATH, 'utf-8')
+    : JSON.stringify({
+        sessions: [], session_drinks: [], session_drink_addons: [],
+        session_extras: [], drinks_catalog: [], extras_catalog: [], drink_addons: [],
+      })
+  fs.writeFileSync(DB_PATH, seed, 'utf-8')
+}
+
 function readDb(): DB {
+  ensureDb()
   const raw = fs.readFileSync(DB_PATH, 'utf-8')
   const data = JSON.parse(raw)
   // Compatibilité ascendante si les nouvelles tables n'existent pas encore
